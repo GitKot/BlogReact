@@ -2,7 +2,7 @@ import React, {Component} from 'react'
 import {Route, NavLink} from 'react-router-dom'
 import SinInForm from '../aut/sinInForm'
 import SinUpForm from '../aut/sinUpForm'
-import {signUp, moduleName} from '../../ducks/auth'
+import {signUp, moduleName, signIn} from '../../ducks/auth'
 import {connect} from 'react-redux'
 import Loader from '../common/Loader'
 
@@ -28,11 +28,11 @@ class authRouts extends Component {
             </div>
         )
     }
-    handleSinInSubmit =(values)=> console.log(values)
+    handleSinInSubmit =({email, password})=> this.props.signIn(email, password)
     handleSinUpSubmit =({email, password})=> this.props.signUp(email, password)
 }
 
 export default connect(state => ({
   loading:!!state[moduleName].loading,
   error: state[moduleName].error
-}), {signUp}) (authRouts)
+}), {signUp, signIn}) (authRouts)

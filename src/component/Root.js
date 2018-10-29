@@ -4,17 +4,27 @@ import authRouts from './Routs/authRouts'
 import adminRouts from './Routs/adminRouts'
 import ProtectedRoute from './common/ProtectedRout'
 import People from './Routs/peopleRout'
+import {connect} from 'react-redux'
+import {signOut, moduleName} from '../ducks/auth'
+import {Link} from 'react-router-dom'
 
 class Root extends Component {
     render(){
+        const {autorized, signOut} = this.props
+        const btn = autorized ? 
+        <button onClick={signOut}>signOut</button>:
+        <Link to = "/auth/signin">signIn</Link>
         return(
             <div>
+                {btn}
                 <Route path = '/auth' component = {authRouts}/>
                 <ProtectedRoute path = '/admin' component = {adminRouts}/>
-                <Route path = '/people' component = {People}/>
+                <ProtectedRoute path = '/people' component = {People}/>
             </div>
         )
     }
 } 
 
-export default Root
+export default connect((state)=>({
+    autorized: !!state[moduleName].user
+}),{signOut}, null,  {pure:false})(Root)
