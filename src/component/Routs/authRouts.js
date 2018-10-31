@@ -35,4 +35,5 @@ class authRouts extends Component {
 export default connect(state => ({
   loading:!!state[moduleName].loading,
   error: state[moduleName].error
+  
 }), {signUp, signIn}) (authRouts)

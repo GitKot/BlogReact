@@ -1,5 +1,6 @@
 import React, {Component} from 'react'
 import {Field, reduxForm} from 'redux-form'
+import errorFild from '../common/errorField'
 
 class singInForm extends Component {
     render() {
@@ -8,12 +9,12 @@ class singInForm extends Component {
                 <h1>sinInForm</h1>
                 <form onSubmit={this.props.handleSubmit}>
                     <div>
-                    <label>Email</label>
-                    <Field component="input" name='email' type="text" placeholder="email"/>
+                  
+                    <Field component={errorFild} name='email' type="text" />
                     </div>
                     <div>
-                    <label>Password</label>
-                    <Field component="input" name='password' type="password" placeholder="password"/>  
+                   
+                    <Field component={errorFild} name='password' type="password" />  
                     </div>
                     <div>
                     <input type="submit"/>

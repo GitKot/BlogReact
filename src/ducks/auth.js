@@ -1,7 +1,6 @@
 import {appName} from '../config'
 import firebase from 'firebase'
 import {Record} from 'immutable'
-import store from 'redux'
 import {all, take, call, put, cps, takeEvery} from 'redux-saga/effects'
 import {push} from 'react-router-redux'
 
@@ -31,6 +30,7 @@ export default function (state = new ReducerRecord(), action){
          return state.set('loading', true)
 
         case SIGN_IN_SUCCESS:
+        console.log('payload.user', payload.user)
           return state.set('loading', false)
                       .set('user', payload.user)
                       .set('error', null)
@@ -77,9 +77,9 @@ export const signUpSaga = function* (){
     try{
         const user = yield call([auth, auth.createUserWithEmailAndPassword],
                                action.payload.email, action.payload.password ) 
-                   
+                  
                     yield put({
-                            type:SIGN_IN_SUCCESS,
+                            type: SIGN_IN_SUCCESS,
                             payload:{user}
                     })
     }catch(error){
@@ -95,10 +95,15 @@ export const signInSaga = function * (){
         const action = yield take(SIGN_IN_REQUEST)
 
         try{
-          yield call(
+          const user = yield call(
             [auth, auth.signInWithEmailAndPassword],
             action.payload.email, action.payload.password
-        )
+           )
+          
+           yield put({
+                type:SIGN_IN_SUCCESS,
+                payload: {user}
+    })
          }catch(error){
              yield put({
                  type: SIGN_IN_ERROR,

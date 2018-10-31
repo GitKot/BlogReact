@@ -7,6 +7,7 @@ import People from './Routs/peopleRout'
 import {connect} from 'react-redux'
 import {signOut, moduleName} from '../ducks/auth'
 import {Link} from 'react-router-dom'
+import EventsPage from './Routs/EventsPage'
 
 class Root extends Component {
     render(){
@@ -20,6 +21,7 @@ class Root extends Component {
                 <Route path = '/auth' component = {authRouts}/>
                 <ProtectedRoute path = '/admin' component = {adminRouts}/>
                 <ProtectedRoute path = '/people' component = {People}/>
+                <ProtectedRoute path = '/events' component = {EventsPage}/>
             </div>
         )
     }
@@ -27,4 +29,4 @@ class Root extends Component {
 
 export default connect((state)=>({
     autorized: !!state[moduleName].user
-}),{signOut}, null,  {pure:false})(Root)
+}),{signOut}, null, {pure:false})(Root)
