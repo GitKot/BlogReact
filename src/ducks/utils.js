@@ -9,3 +9,4 @@ export function fbDataToEntities(data, RecordModel = Map){
             [uid, (new RecordModel(value)).set('uid', uid) ]
         ))
 }
+

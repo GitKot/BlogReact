@@ -3,6 +3,7 @@ import {Field, reduxForm} from 'redux-form'
 import emailValidator from 'email-validator'
 import ErrorFild from '../common/errorField'
 
+
 class People extends Component{
         render(){
             return (
@@ -26,6 +27,7 @@ class People extends Component{
                     </div>
                     <input type="submit"/>
                     </form>
+                    
                 </div>
             )
         }
