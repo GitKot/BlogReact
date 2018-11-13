@@ -1,18 +1,44 @@
  import React, {Component} from 'react'
- import PropTypes from 'prop-types'
+ import {DragSource} from 'react-dnd'
+ import {getEmptyImage} from 'react-dnd-html5-backend'
 
 
  class personCard extends Component {
- static propTypes = {
- }
+  
+    componentDidMount(){
+        this.props.connectPreview(getEmptyImage())
+    }
+    
   render(){
-      const {people, style} = this.props
-      console.log(33333333333, people, style)
-    return(
-            <div style={{width:300, height: 200, ...style}}>
-            <h3>{people.firstname}&nbsp:{people.lastname}</h3>
+      const {people, style, connectDragSource, isDragging } = this.props
+      const draggStyle = {
+          backgroundColor: isDragging ? 'grey': 'white'
+      }
+    return (
+            <div style={{width:300, height: 200, ...draggStyle, ...style}}>
+            {connectDragSource(<h3>{people.firstname}&nbsp:{people.lastname}</h3>)}
             <p>{people.email}</p>
             </div>
            )
  }}
- export default  personCard
+
+ const spec = {
+     beginDrag(props){
+        return {
+            uid: props.people.uid
+        }
+     },
+     endDrag(props, monitor){
+        const personUid = props.people.uid
+        const dropResult = monitor.getDropResult()
+        const eventUid = dropResult && dropResult.eventUid
+        console.log('uid uid uid', personUid, eventUid )
+     }
+ }
+
+ const collect = (connect, monitor) => ({
+     connectDragSource: connect.dragSource(),
+     isDragging: monitor.isDragging(),
+     connectPreview: connect.dragPreview()
+ })
+ export default  DragSource('people', spec, collect)(personCard)

@@ -94,6 +94,9 @@ export  default function  reducer(state = new ReducerRecord() , action){
     export const eventListSelectors = createSelector(entitiesSelector, entities => (
         entities.valueSeq().toArray()
     ))
+    export const sectionselector = createSelector(stateSelector, state => state.selected)
+    export const selectedEventsSelector = createSelector(entitiesSelector, sectionselector,
+        (entities, selection) => (selection.toArray().map(uid => entities.get(uid))))
 
 
 /** SAGA **/

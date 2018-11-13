@@ -2,7 +2,6 @@ import React, {Component} from 'react'
 import {connect} from 'react-redux'
 import {moduleName} from '../../ducks/events'
 import {fetchLazy, eventListSelectors, selectEvent} from '../../ducks/events'
-import Loader from '../common/Loader'
 import {Table, Column, InfiniteLoader} from 'react-virtualized'
 import 'react-virtualized/styles.css'
 
@@ -69,7 +68,7 @@ export class EventList extends Component {
 
    isRowLoded = ({ index }) => index < this.props.eventlist.length
 
-   handleRowClick = (rowData) =>  {
+   handleRowClick = ({rowData}) =>  {
        
        const {selectEvent} = this.props
        selectEvent && selectEvent(rowData.uid)

@@ -2,7 +2,6 @@ import React from "react"
 import {appName} from '../config'
 import { List, Record, OrderedMap } from "immutable";
 import {put, takeEvery,take, call, all,  select} from 'redux-saga/effects'
-import {generateId} from './utils'
 import {reset} from 'redux-form'
 import firebase from 'firebase'
 import {fbDataToEntities} from '../ducks/utils'
@@ -19,6 +18,9 @@ export const FETCH_OLL_PEOPLE_REQUEST = `${prefix}/FETCH_OLL_PEOPLE_REQUEST`
 export const FETCH_OLL_PEOPLE_SUCCESS =  `${prefix}/FETCH_OLL_PEOPLE_SUCCESS`
 export const FETCH_OLL_PEOPLE_ERROR =  `${prefix}/FETCH_OLL_PEOPLE_ERROR`
 
+export const ADD_EVENT_REQUEST = `${prefix}/ADD_EVENT_REQUEST`
+export const ADD_EVENT_SUCCESS = `${prefix}/ADD_EVENT_SUCCESS`
+
 
 const ReducerState = Record({
     entities: OrderedMap({}),
@@ -29,7 +31,8 @@ const PersonRecord = Record({
     uid: null,
     firstname: null,
     lastname: null,
-    email:null
+    email:null,
+    events: []
 })
 
 export default function reducer(state = new ReducerState(), action){
@@ -49,7 +52,9 @@ export default function reducer(state = new ReducerState(), action){
                        .set('loading', false)
                        .set('entities', fbDataToEntities(payload, PersonRecord))
                                
-        
+        case ADD_EVENT_SUCCESS:
+                return state
+                       .setIn(['entities', payload.personUid, 'events'], payload.events)
         
 
         default:return state
@@ -72,11 +77,19 @@ export function addPeople(person){
     }
 }
 
-
+export function addEventToPeople(eventUid, personUid){
+    return{
+        type: ADD_EVENT_REQUEST,
+        payload: {eventUid, personUid}
+    }
+}
 /** SELECTORS**/
 export const setateSelector = state => state[modyleName]
 export const entitiesSelector = createSelector(setateSelector, state => state.entities)
+export const idSelector = ( _, props ) => props.uid
 export const peoplelistSelector = createSelector(entitiesSelector, entities => entities.valueSeq().toArray())
+export const personSelector = createSelector(entitiesSelector, idSelector, 
+    ((entities, id ) => entities.get(id))  )
 
 
 
@@ -119,9 +132,34 @@ export const fetchOllPeopleSaga = function* (){
    
 }
 
+
+export const addEventSaga = function*(action){
+
+    const {eventUid, personUid} = action.payload
+    const eventsRef = firebase.database().ref(`people/${personUid}/events`)
+
+    const state = yield select(setateSelector)
+    
+    const events = state.getIn(['entities', personUid, 'events']).concat(eventUid)
+    console.log('events======', events)
+    try{
+    yield call([eventsRef, eventsRef.set], events)
+    yield put({
+        type:ADD_EVENT_SUCCESS,
+        payload:{
+            personUid,
+            events
+        }
+    })
+    }catch(error){}
+}
+
+
+
 export const saga = function*() {
     yield all([
         takeEvery(ADD_PEOPLE_REQUEST, addPersonSaga),
-        takeEvery(FETCH_OLL_PEOPLE_REQUEST, fetchOllPeopleSaga)
+        takeEvery(FETCH_OLL_PEOPLE_REQUEST, fetchOllPeopleSaga),
+        takeEvery(ADD_EVENT_REQUEST, addEventSaga)
 ])
 }

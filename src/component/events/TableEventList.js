@@ -4,13 +4,12 @@
  import {fetchOll, eventListSelectors, selectEvent} from '../../ducks/events'
  import Loader from '../common/Loader'
 
- export class EventList extends Component {
-    
-  
+
+
+ export class EventListTable extends Component {
     componentDidMount(){
-       this.props.fetchOll()
-    }
-    
+        this.props.fetchOll()
+     } 
     render(){
         const {eventlist, loading} = this.props
         console.log('_______',  eventlist)
@@ -47,4 +46,4 @@
     export default connect( state => ({
          eventlist: eventListSelectors(state),
          loading:state[moduleName].loading
-    }), {fetchOll, selectEvent})(EventList)
+    }), {fetchOll, selectEvent})(EventListTable)

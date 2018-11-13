@@ -1,6 +1,8 @@
 import React, {Component} from 'react'
 import PersonCard from '../People/personCard'
 import PersonList from '../People/personList';
+import EventList from '../events/Virtualize'
+import SelectedEvents from '../events/selectedEvents'
 
 class adminRouts extends Component {
     render(){
@@ -8,6 +10,8 @@ class adminRouts extends Component {
             <div>
                 <h1>Admin page</h1>
                 <PersonList/>
+                <SelectedEvents/>
+                <EventList/>
             </div>
         )
     }
