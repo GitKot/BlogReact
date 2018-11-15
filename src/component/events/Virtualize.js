@@ -4,7 +4,8 @@ import {moduleName} from '../../ducks/events'
 import {fetchLazy, eventListSelectors, selectEvent} from '../../ducks/events'
 import {Table, Column, InfiniteLoader} from 'react-virtualized'
 import 'react-virtualized/styles.css'
-
+import {DragSource} from 'react-dnd'
+import TableRow from './TableRow';
 
 export class EventList extends Component {
    
@@ -15,15 +16,18 @@ export class EventList extends Component {
    
    render(){
        const {loading, eventlist} = this.props
+      
     //    if (loading) return <Loader/>
-       return(
+       return (
            <InfiniteLoader
                 loadMoreRows = {this.loadMoreRows}
                 isRowLoaded={this.isRowLoded}
                 rowCount={this.props.eventlist.length + 1}
                 
            >
+           
                {({onRowsRendered, registerChild})=>
+
                <Table 
                     ref = {registerChild}
                     rowCount =  {eventlist.length} 
@@ -35,6 +39,7 @@ export class EventList extends Component {
                     overscanRowCount = {5}
                     width ={700}
                     height={300}
+                    rowRenderer={this.getRowRenderer}
                >
                     <Column
                             label="title"
@@ -57,23 +62,25 @@ export class EventList extends Component {
             </InfiniteLoader>   
            )
    }
+
+   getRowRenderer = (rowCtx)=> < TableRow {...rowCtx}/>
+
    rowGetter = ({index}) => {
-        return this.props.eventlist[index]
+            return this.props.eventlist[index]
    }
    
    loadMoreRows = () => {
-       console.log('___', 'load more')
-       this.props.fetchLazy()
+          this.props.fetchLazy()
    }
 
    isRowLoded = ({ index }) => index < this.props.eventlist.length
 
    handleRowClick = ({rowData}) =>  {
-       
        const {selectEvent} = this.props
        selectEvent && selectEvent(rowData.uid)
    } 
 }
+
 
 
    export default connect( state => ({

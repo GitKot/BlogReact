@@ -19,6 +19,11 @@ class Root extends Component {
         return(
             <div>
                 {btn}
+                <ul>
+                    <li><Link to ="/admin">Admin</Link></li>
+                    <li><Link to ="/people">People</Link></li>
+                    <li><Link to ="/events">Events</Link></li>
+                </ul>
                 <Route path = '/auth' component = {authRouts}/>
                 <ProtectedRoute path = '/admin' component = {adminRouts}/>
                 <ProtectedRoute path = '/people' component = {People}/>

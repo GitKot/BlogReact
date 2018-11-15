@@ -6,7 +6,7 @@
  class personCard extends Component {
   
     componentDidMount(){
-        this.props.connectPreview(getEmptyImage())
+        this.props.connectPreview(getEmptyImage()) // убрали стандартную html  preview
     }
     
   render(){
@@ -32,7 +32,7 @@
         const personUid = props.people.uid
         const dropResult = monitor.getDropResult()
         const eventUid = dropResult && dropResult.eventUid
-        console.log('uid uid uid', personUid, eventUid )
+        
      }
  }
 

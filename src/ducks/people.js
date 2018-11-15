@@ -1,7 +1,8 @@
 import React from "react"
 import {appName} from '../config'
 import { List, Record, OrderedMap } from "immutable";
-import {put, takeEvery,take, call, all,  select} from 'redux-saga/effects'
+import {put, takeEvery, take, call, all, select, fork, spawn, cancel, cancelled} from 'redux-saga/effects'
+import {delay} from 'redux-saga' // effekt zaderzki
 import {reset} from 'redux-form'
 import firebase from 'firebase'
 import {fbDataToEntities} from '../ducks/utils'
@@ -48,6 +49,7 @@ export default function reducer(state = new ReducerState(), action){
                                     new PersonRecord(payload)  )
 
         case FETCH_OLL_PEOPLE_SUCCESS:
+        console.log(payload)
                 return state
                        .set('loading', false)
                        .set('entities', fbDataToEntities(payload, PersonRecord))
@@ -102,16 +104,15 @@ export const addPersonSaga = function*(action){
         yield put({
             type: ADD_PEOPLE_SUCCESS,
             payload:{...action.payload, uid:ref.key}
-        })
-      
+        }) 
          yield put(reset('person'))
+
     }catch(error){
         yield put({
             type: ADD_PEOPLE_ERROR,
             payload: error
         })
     }
- 
 }
 
 export const fetchOllPeopleSaga = function* (){
@@ -119,17 +120,17 @@ export const fetchOllPeopleSaga = function* (){
     const peopleRef = firebase.database().ref('people')
     try{
         const data = yield call([peopleRef, peopleRef.once], 'value')
+      
         yield put({
             type:FETCH_OLL_PEOPLE_SUCCESS,
-            payload: data.val()
+            payload: data.val() //vozvraschaet object {k:{}}
         })
     }catch(error){
         yield put({
             type:FETCH_OLL_PEOPLE_ERROR,
             payload:error
         })
-    }
-   
+    }   
 }
 
 
@@ -141,7 +142,7 @@ export const addEventSaga = function*(action){
     const state = yield select(setateSelector)
     
     const events = state.getIn(['entities', personUid, 'events']).concat(eventUid)
-    console.log('events======', events)
+    
     try{
     yield call([eventsRef, eventsRef.set], events)
     yield put({
@@ -154,9 +155,30 @@ export const addEventSaga = function*(action){
     }catch(error){}
 }
 
+export const backgroundSyncSaga = function* (){
+    //postoyannoe obnovlenie dannuh cukl
+    try {
+    while(true){
+        yield call(fetchOllPeopleSaga) //saga call saga its okkey
+        yield delay(2000)}
+    } finally {
+        if(yield cancelled){  // sposob proverky ostanovki sagi v ruchnuy metodom cancelled
+        console.log('cancelled') 
+        }
+    } 
+}
 
+export const canselableSunc = function *(){
+    const task = yield fork(backgroundSyncSaga) //vozvraschaet ssulky pri vupolnenie sagi
+
+    yield delay(8000)
+    yield cancel(task) // otmenaet vupolnenie sagi po ssulke
+    console.log('cancel')
+}
 
 export const saga = function*() {
+    // yield fork(backgroundSyncSaga) // nezavisimuy zapusk
+    yield spawn(canselableSunc)  // ne lomaet rodutelskuy sagy pri exeption
     yield all([
         takeEvery(ADD_PEOPLE_REQUEST, addPersonSaga),
         takeEvery(FETCH_OLL_PEOPLE_REQUEST, fetchOllPeopleSaga),

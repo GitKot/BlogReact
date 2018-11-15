@@ -1,4 +1,4 @@
-import {all, take, call, put, select} from 'redux-saga/effects'
+import {all, take, call, put, select, takeEvery} from 'redux-saga/effects'
 import {Record, OrderedMap, OrderedSet} from 'immutable'
 import {appName} from '../config'
 import firebase from 'firebase'
@@ -17,6 +17,10 @@ export const FETCH_LAZY_REQUEST = `${prefix}/FETCH_LAZY_REQUEST`
 export const FETCH_LAZY_START = `${prefix}/FETCH_LAZY_START`
 export const FETCH_LAZY_SUCCESS = `${prefix}/FETCH_LAZY_SUCCESS`
 export const SELECT_EVENT = `${prefix}/SELECT_EVENT`
+
+export const DELETE_EVENT_REQUEST = `${prefix}/DELETE_EVENT_REQUEST`
+export const DELETE_EVENT_SUCCESS = `${prefix}/DELETE_EVENT_SUCCESS`
+
 
 export const ReducerRecord = Record({
     entities: new OrderedMap({}),
@@ -51,7 +55,7 @@ export  default function  reducer(state = new ReducerRecord() , action){
                  .set('entities', fbDataToEntities(payload, EventRecord) )
     
     case FETCH_LAZY_SUCCESS:
-    console.log(22)
+   
         return state 
               .set('loading', false)
               .mergeIn(['entities'], fbDataToEntities(payload, EventRecord))
@@ -62,7 +66,15 @@ export  default function  reducer(state = new ReducerRecord() , action){
         return state.selected.contains(payload.uid)
                     ? state.update('selected', selected => selected.remove(payload.uid))
                     : state.update('selected', selected => selected.add(payload.uid))
-               
+
+    case DELETE_EVENT_REQUEST:
+        return state.set('loading', true)
+
+    case DELETE_EVENT_SUCCESS:
+        return state.set('loading', false)
+                    .deleteIn(['entities', payload.uid] )
+
+
     default: return state
 }}
 
@@ -86,6 +98,13 @@ export  default function  reducer(state = new ReducerRecord() , action){
             type:FETCH_LAZY_REQUEST
         }
     }
+    
+    export function deleteEvent(uid){
+        return{
+            type:DELETE_EVENT_REQUEST,
+            payload:{uid}
+        }
+    }
 
  /** SELECTORS**/
 
@@ -105,7 +124,7 @@ export const fetchOllSaga = function* (){
     while(true){ 
         yield take(FETCH_OLL_REQUEST)
         const ref = firebase.database().ref('events')
-        const data = yield call([ref, ref.once], 'value')
+        const data = yield call([ref, ref.once], 'value') //poluchenie dannuh
         yield put({
             type:FETCH_OLL_SUCCESS,
             payload: data.val()
@@ -117,7 +136,7 @@ export const fetchLazySaga = function* (){
     while(true){
         yield take(FETCH_LAZY_REQUEST)
 
-        const state = yield select(stateSelector)
+        const state = yield select(stateSelector) //dostyp k store (v stateselector budet peredan state)
         const lastEvent = state.entities.last()
         if(state.loading || state.loaded) continue
 
@@ -139,11 +158,24 @@ export const fetchLazySaga = function* (){
     }
 }
 
+export const deleteEventSaga = function*(action){
+    const {uid} = action.payload
+    const {payload} = action
+    const ref = firebase.database().ref(`events/${uid}`)
+    try{
+        yield call([ref, ref.remove]) //delete from firebse
+        yield put({
+            type:DELETE_EVENT_SUCCESS,
+            payload
+        })
+    }catch(error){}
+}
 
 
 export const saga = function*(){
     yield all([
         fetchOllSaga(),
-        fetchLazySaga()
+        fetchLazySaga(),
+        takeEvery(DELETE_EVENT_REQUEST, deleteEventSaga)
     ])
 }
