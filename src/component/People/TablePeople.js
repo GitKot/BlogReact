@@ -4,12 +4,20 @@ import {Table, Column} from 'react-virtualized'
 import 'react-virtualized/styles.css'
 import {connect} from 'react-redux'
 import {fetchOllPeople, peoplelistSelector} from '../../ducks/people'
-
+import {Motion, spring, presets} from 'react-motion'
 
 class TablePeople extends Component {
 
     componentDidMount(){
         this.props.fetchOllPeople && this.props.fetchOllPeople()
+    }
+    
+    componentDidUpdate({people}){
+        if(people.length && this.props.people.length > people.length){
+            setTimeout(()=> {
+                this.table.scrollToRow(this.props.people.length)
+            }, 0)
+        }
     }
     render(){
         const {people} = this.props
@@ -23,6 +31,7 @@ class TablePeople extends Component {
                 headerHeight = {50}
                 width ={450}
                 height={300}
+                ref={this.setListRef}
             >
                 <Column
                 label="firstname"
@@ -42,8 +51,9 @@ class TablePeople extends Component {
             </Table>
         )
     }
-    rowGetter = ({index}) =>  this.props.people[index]
-  
+    rowGetter = ({index}) => this.props.people[index]
+    
+    setListRef = ref => this.table = ref
 }
 
 export default connect(state => ({

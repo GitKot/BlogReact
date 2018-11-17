@@ -4,30 +4,35 @@
  import {deleteEvent} from '../../ducks/events'
  import {moduleName} from '../../ducks/events'
  import Loader from '../common/Loader'
+ import {Motion, spring, presets} from 'react-motion'
 
 
-const style = {
-    width:'8vmax',
-    height:'10vmax',
-    backgroundColor : 'green',
-    position:'fixed',
-    top:'5vmax',
-    right:'5vmax',
-    zIndex: 1000
-}
 
  class GarbageBox extends Component {
  
   render(){
-    const {connectDropTarget, canDrop, loading} = this.props
-    const dropstyle = {...style, outline: `4px solid ${canDrop? "green": "blue" }` }
-    const loader = loading ? <Loader/>: null
-    return connectDropTarget(
-            <div style = {dropstyle}>
-            TRASH
-            {loader}
-            </div>
-           )
+    const {connectDropTarget, isOver, loading} = this.props
+   const style = {
+      outline: `4px solid ${isOver? "green": "blue" }`, 
+        width:'8vmax',
+        height:'10vmax',
+        backgroundColor : 'green',
+        position:'fixed',
+        top:'5vmax',
+        right:'5vmax',
+        zIndex: 1000
+    }
+  
+    return <Motion defaultStyle = {{opacity:0}}
+                    style={{opacity:spring(1, {...presets.noWobble,
+                    stiffness: presets.noWobble.stiffness/20})}}>
+            {interpolatedStyle  => connectDropTarget(
+                <div style = {{...style, ...interpolatedStyle}}>
+                  TRASH
+                  {loading && <Loader/>}
+                </div>
+            )}
+           </Motion>
  }}
 const spec = {
     drop(props, monitor){
@@ -38,7 +43,7 @@ const spec = {
 
 const collect = (connect, monitor) =>({
       connectDropTarget: connect.dropTarget(),
-      canDrop: monitor.canDrop()
+      isOver: monitor.isOver()
 
 })
 

@@ -1,8 +1,9 @@
 import {appName} from '../config'
 import firebase from 'firebase'
 import {Record} from 'immutable'
-import {all, take, call, put, cps, takeEvery} from 'redux-saga/effects'
+import {all, take, call, put, cps, takeEvery, spawn} from 'redux-saga/effects'
 import {push} from 'react-router-redux'
+import {eventChannel} from 'redux-saga'
 
 const ReducerRecord =  Record({
     user:null,
@@ -30,7 +31,7 @@ export default function (state = new ReducerRecord(), action){
          return state.set('loading', true)
 
         case SIGN_IN_SUCCESS:
-        console.log('payload.user', payload.user)
+       
           return state.set('loading', false)
                       .set('user', payload.user)
                       .set('error', null)
@@ -69,11 +70,9 @@ export function signOut(){
 
 /** SAGA **/
 
-export const signUpSaga = function* (){
+export const signUpSaga = function* (action ){
     const auth =  firebase.auth()
-
-    while(true){
-    const action = yield take(SIGN_UP_REQUEST)
+    console.log('SIGN_UP_REQUEST')
     try{
         const user = yield call([auth, auth.createUserWithEmailAndPassword],
                                action.payload.email, action.payload.password ) 
@@ -87,13 +86,13 @@ export const signUpSaga = function* (){
                 type:SIGN_UP_ERROR
             })
     }
-}}
+}
 
 export const signInSaga = function * (){
     const auth = firebase.auth()
     while(true){
         const action = yield take(SIGN_IN_REQUEST)
-
+        
         try{
           const user = yield call(
             [auth, auth.signInWithEmailAndPassword],
@@ -117,37 +116,43 @@ export const signInSaga = function * (){
 
 export const signOutSaga = function* (){
     const auth = firebase.auth()
-
     try{
         yield call([auth, auth.signOut])
-        yield put({
-            type: SIGN_OUT_SUCCESS
-        })
-        yield put(push('/auth/signin'))
     }catch(error){
-
     }
-   
 }
-
+// create chanel to auth
+// emmit this aur subscriber
+const createAuthChanel = () => eventChannel( emmit => {
+      return  firebase.auth().onAuthStateChanged(user => emmit({user}))
+})
 
 export const watchStatusChange = function*() {
-    const auth = firebase.auth()
-    try{
-       yield cps([auth, auth.onAuthStateChanged])
-    }catch(user){
-        yield put({
-            type:SIGN_IN_SUCCESS,
-            payload: {user}
-        })
-    }
+       const chan = yield call(createAuthChanel)
+       while(true){
+           const {user} = yield take(chan)
+       
+           if(user){
+               yield put({
+                   type:SIGN_IN_SUCCESS,
+                   payload: {user}
+               })
+           }else{
+               console.log('SIGN_OUT_SUCCESS')
+               yield put({
+                   type: SIGN_OUT_SUCCESS,
+                   payload: {user}
+               })
+               yield put(push('/auth/signin'))
+           }
+       }
 }
 
 export const saga = function*(){
+    yield spawn(watchStatusChange)
     yield all([
-        signUpSaga(),
+        takeEvery(SIGN_UP_REQUEST, signUpSaga),
         signInSaga(),
-        watchStatusChange(),
         takeEvery(SIGN_OUT_REQUEST, signOutSaga)
     ])
 } 

@@ -1,12 +1,13 @@
 import React from "react"
 import {appName} from '../config'
 import { List, Record, OrderedMap } from "immutable";
-import {put, takeEvery, take, call, all, select, fork, spawn, cancel, cancelled} from 'redux-saga/effects'
-import {delay} from 'redux-saga' // effekt zaderzki
+import {put, takeEvery, take, call, all, select, fork, spawn, cancel, cancelled, race} from 'redux-saga/effects'
+import {delay, eventChannel, channel} from 'redux-saga' // effekt zaderzki
 import {reset} from 'redux-form'
 import firebase from 'firebase'
 import {fbDataToEntities} from '../ducks/utils'
 import {createSelector} from 'reselect'
+
 
 export const modyleName = 'people'
 export const prefix = `${modyleName}/${appName}`
@@ -156,11 +157,12 @@ export const addEventSaga = function*(action){
 }
 
 export const backgroundSyncSaga = function* (){
-    //postoyannoe obnovlenie dannuh cukl
+    //postoyannoe obnovlenie dannuh loop
     try {
     while(true){
         yield call(fetchOllPeopleSaga) //saga call saga its okkey
-        yield delay(2000)}
+        yield delay(2000)
+    }
     } finally {
         if(yield cancelled){  // sposob proverky ostanovki sagi v ruchnuy metodom cancelled
         console.log('cancelled') 
@@ -168,17 +170,50 @@ export const backgroundSyncSaga = function* (){
     } 
 }
 
-export const canselableSunc = function *(){
-    const task = yield fork(backgroundSyncSaga) //vozvraschaet ssulky pri vupolnenie sagi
+ export const canselableSunc = function *(){
+     yield race({sync: realtimeSync(),
+        delay: delay(6000) })  
+    // race zapuskaet paralelno neskolko sag i kogda odna iz nix vupolnaetsa race otmenaet vse sagi             
+    // const task = yield fork(backgroundSyncSaga) //vozvraschaet ssulky pri vupolnenie sagi
 
-    yield delay(8000)
-    yield cancel(task) // otmenaet vupolnenie sagi po ssulke
-    console.log('cancel')
+    // yield delay(8000)
+    // yield cancel(task) // otmenaet vupolnenie sagi po ssulke
+    // console.log('cancel')
+ }
+
+// create realtime connect with firebase 
+// podpiska na izminenija v moyom store
+const createPeopleSocket = () => eventChannel(emmit => {
+    const ref = firebase.database().ref('people')
+    const collback = (data) => emmit({data}) //eto podpiska
+    ref.on('value', collback)
+    
+    return () => {
+        console.log('-----unsubscribe')
+        ref.off('value', collback)} // vozvrat function dla otpisky na kanal
+} )
+
+export const realtimeSync = function*(){
+   const chanel = yield call(createPeopleSocket) // this call vernet chanel 
+   //naw we make reaction on this chanel
+   try{
+   while(true){
+        const {data} = yield take(chanel) // vuzov canala kotoruy vernet data
+        yield put({ //otreagiruem na poluchenie data i perezapichem cherez action
+            type: FETCH_OLL_PEOPLE_SUCCESS,
+            payload: data.val()
+        })
+        console.log('------', data.val())
+   }
+}finally{
+    yield call([chanel, chanel.close]) //close chenel
+    console.log('cancelled realtime saga')
+}
 }
 
 export const saga = function*() {
     // yield fork(backgroundSyncSaga) // nezavisimuy zapusk
-    yield spawn(canselableSunc)  // ne lomaet rodutelskuy sagy pri exeption
+    yield spawn(canselableSunc)  // spawn ne lomaet rodutelskuy sagy pri exeption
     yield all([
         takeEvery(ADD_PEOPLE_REQUEST, addPersonSaga),
         takeEvery(FETCH_OLL_PEOPLE_REQUEST, fetchOllPeopleSaga),

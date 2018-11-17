@@ -1,7 +1,7 @@
  import React, {Component} from 'react'
  import {DragSource} from 'react-dnd'
  import {getEmptyImage} from 'react-dnd-html5-backend'
-
+ import {Motion, spring, presets} from 'react-motion'
 
  class personCard extends Component {
   
@@ -15,11 +15,18 @@
           backgroundColor: isDragging ? 'grey': 'white'
       }
     return (
-            <div style={{width:300, height: 200, ...draggStyle, ...style}}>
-            {connectDragSource(<h3>{people.firstname}&nbsp:{people.lastname}</h3>)}
-            <p>{people.email}</p>
+            <div style={{width:300, height: 200, ...draggStyle, ...style  }}>
+                <Motion defaultStyle = {{opacity:0}}
+                    style={{opacity:spring(1, {...presets.noWobble,
+                        stiffness: presets.noWobble.stiffness/10})}}>
+
+                    { interpolatedStyle => <div style={{...interpolatedStyle}}>
+                        {connectDragSource(<h3>{people.firstname}&nbsp:{people.lastname}</h3>)}
+                        <p>{people.email}</p>
+                    </div>}
+                </Motion>
             </div>
-           )
+            )        
  }}
 
  const spec = {
@@ -31,8 +38,7 @@
      endDrag(props, monitor){
         const personUid = props.people.uid
         const dropResult = monitor.getDropResult()
-        const eventUid = dropResult && dropResult.eventUid
-        
+        const eventUid = dropResult && dropResult.eventUid  
      }
  }
 

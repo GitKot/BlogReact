@@ -9,7 +9,7 @@ import Loader from '../common/Loader'
 class authRouts extends Component {
     render(){
         const {loading, error} = this.props
-        console.log('____', error)
+        
        
         return (
             <div>

@@ -18,7 +18,7 @@
            <p>
            {people.map(person => person.email).join(',  ')}
            </p>) 
-           console.log('people', people)  
+             
            
     return connectDropTarget(
             <div style = {dropStyle}>
